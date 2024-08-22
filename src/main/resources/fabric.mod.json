@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "noteblockautoplay",
+  "version": "${version}",
+  "name": "noteblockAutoplay",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/noteblockautoplay/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "org.example.noteblockautoplay.client.NoteblockAutoplayClient"
+    ],
+    "main": [
+      "org.example.noteblockautoplay.NoteblockAutoplay"
+    ]
+  },
+  "mixins": [
+    "noteblockautoplay.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
