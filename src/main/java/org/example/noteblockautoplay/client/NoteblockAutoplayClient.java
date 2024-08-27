@@ -7,6 +7,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.NoteBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.player.PlayerEntity;
@@ -41,14 +42,12 @@ public class NoteblockAutoplayClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (keyBind1.wasPressed()) {
                 // Загрузить файл и сохранить последовательность
-                logger.info("y");
                 sequence = readMusicFile(client.runDirectory.toPath().resolve("config"));
-                scanNoteBlocksInChunk(MinecraftClient.getInstance().world, MinecraftClient.getInstance().player.getBlockPos());
+                scanNoteBlocksInChunk(MinecraftClient.getInstance().world, MinecraftClient.getInstance().player);
             }
 
             while (keyBind2.wasPressed()) {
                 // Воспроизвести следующую ноту
-                logger.info("u");
                 playNextNote(client.world, client.player, sequence);
             }
         });
@@ -56,17 +55,16 @@ public class NoteblockAutoplayClient implements ClientModInitializer {
 
 
     // Примерный код для сканирования нотных блоков в чанке
-    public void scanNoteBlocksInChunk(World world, BlockPos playerPos) {
-        Chunk chunk = world.getChunk(playerPos);
+    public void scanNoteBlocksInChunk(World world, ClientPlayerEntity player) {
+        BlockPos playerPos = player.getBlockPos();
         List<BlockPos> noteBlocks = new ArrayList<>();
 
         // Проходим через все блоки в чанке
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < world.getHeight(); y++) {
-                for (int z = 0; z < 16; z++) {
-                    BlockPos blockPos = chunk.getPos().getBlockPos(x, y, z);
+        for (int dy = -5; dy < 5; dy++) {
+            for (int dx = -5; dx < 5; dx++) {
+                for (int dz = -5; dz < 5; dz++) {
+                    BlockPos blockPos = player.getBlockPos().add(dx, dy, dz);
                     Block block = world.getBlockState(blockPos).getBlock();
-
                     // Если блок является нотным
                     if (block instanceof NoteBlock) {
                         noteBlocks.add(blockPos);
@@ -74,6 +72,7 @@ public class NoteblockAutoplayClient implements ClientModInitializer {
                 }
             }
         }
+
 
         analyzeNoteBlocks(world, noteBlocks);
     }
@@ -101,9 +100,7 @@ public class NoteblockAutoplayClient implements ClientModInitializer {
             for (String line : lines) {
                 sequence.add(Integer.parseInt(line.trim()));
             }
-            logger.info("loaded");
         } catch (IOException e) {
-            logger.info("e");
             e.printStackTrace();
         }
 
@@ -111,22 +108,16 @@ public class NoteblockAutoplayClient implements ClientModInitializer {
     }
 
     public void playNextNote(World world, PlayerEntity player, List<Integer> sequence) {
-        logger.info("empty");
         if (sequence.isEmpty()) return;
-        logger.info("next note playing");
         int nextNote = sequence.removeFirst(); // Получаем следующую ноту и удаляем её из списка
         List<BlockPos> possibleBlocks = noteMap.get(nextNote);
-        logger.info("{} possibleBlocks", possibleBlocks);
-        logger.info("{} noteMap", noteMap);
         if (possibleBlocks != null && !possibleBlocks.isEmpty()) {
             // Находим ближайший блок
             BlockPos nearestBlock = findNearestBlock(player.getBlockPos(), possibleBlocks);
 
             // Воспроизводим ноту (кликаем по блоку)
-            logger.info("{} nearestBlock", nearestBlock);
             if (nearestBlock != null) {
                 MinecraftClient.getInstance().interactionManager.attackBlock(nearestBlock, Direction.UP);
-                logger.info("next note played");
             }
         }
     }
